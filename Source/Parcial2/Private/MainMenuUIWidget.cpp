@@ -3,6 +3,8 @@
 
 #include "MainMenuUIWidget.h"
 #include "Components/Button.h"
+#include "Components/EditableText.h"
+#include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -11,9 +13,14 @@ void UMainMenuUIWidget::NativeConstruct()
 	Super::NativeConstruct();
 
 	// (Añadimos la funcion al boton)
-	if (BTN_Play)
+	if (BTN_Join)
 	{
-		BTN_Play->OnClicked.AddDynamic(this, &UMainMenuUIWidget::OnPlayClicked);
+		BTN_Join->OnClicked.AddDynamic(this, &UMainMenuUIWidget::OnJoinClicked);
+	}
+	
+	if (BTN_Host)
+	{
+		BTN_Host->OnClicked.AddDynamic(this, &UMainMenuUIWidget::OnHostClicked);
 	}
 
 	if (BTN_Quit)
@@ -22,16 +29,51 @@ void UMainMenuUIWidget::NativeConstruct()
 	}
 }
 
-void UMainMenuUIWidget::OnPlayClicked()
-{
-	// (La funcion esta abre el nivel)) 
-	UGameplayStatics::OpenLevel(this, FName("Lvl_ThirdPerson"));
-}
+
 
 void UMainMenuUIWidget::OnHostClicked()
 {
+	
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->SetShowMouseCursor(false);
+	}
+ 
+	
+	UGameplayStatics::OpenLevelBySoftObjectPtr(this, Lvl_ThirdPerson, true, TEXT("listen"));
 }
 
+void UMainMenuUIWidget::OnJoinClicked()
+{
+	if (!TXT_IP)
+	{
+		return;
+	}
+ 
+	
+	const FString IP = TXT_IP->GetText().ToString().TrimStartAndEnd();
+ 
+	if (IP.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Falta escribir la IP del host para unirse."));
+		return;
+	}
+ 
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->SetShowMouseCursor(false);
+	}
+ 
+	
+	UGameplayStatics::OpenLevel(this, FName(*IP));
+}
+
+void UMainMenuUIWidget::OnSettingsClicked()
+{
+}
+ 
 void UMainMenuUIWidget::OnQuitClicked()
 {
 	// (Cerrar juego)

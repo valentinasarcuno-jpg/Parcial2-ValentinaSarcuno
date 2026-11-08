@@ -7,6 +7,7 @@
 #include "MainMenuUIWidget.generated.h"
 
 class UButton;
+class UEditableText;
 
 /**
  * 
@@ -23,23 +24,38 @@ protected:
 
 	// (Botones)
 	UPROPERTY(meta = (BindWidget))
-	UButton* BTN_Play;
-	
+	UButton* BTN_Join;
+    
 	UPROPERTY(meta = (BindWidget))
 	UButton* BTN_Host;
-
+ 
 	UPROPERTY(meta = (BindWidget))
 	UButton* BTN_Quit;
+    
+	UPROPERTY(meta = (BindWidget))
+	UButton* BTN_Settings;
+ 
+	UPROPERTY(meta = (BindWidget))
+	UEditableText* TXT_IP;
+
+	UPROPERTY(meta = (BindWidget))
+	UEditableText* TXT_PlayerTAG;
+	
+	UPROPERTY(EditDefaultsOnly)
+	TSoftObjectPtr<UWorld> Lvl_ThirdPerson;
 
 	// (Funciones de botones)
 	UFUNCTION()
-	void OnPlayClicked();
-	
+	void OnJoinClicked();
+    
 	UFUNCTION()
 	void OnHostClicked();
-
+ 
 	UFUNCTION()
 	void OnQuitClicked();
-};	
+    
+	UFUNCTION()
+	void OnSettingsClicked();
+};
 	
 
