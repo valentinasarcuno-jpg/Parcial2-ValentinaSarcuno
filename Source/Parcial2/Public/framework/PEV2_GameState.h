@@ -18,7 +18,7 @@ enum class EPEV2Phase : uint8
 	Ended   UMETA(DisplayName = "Fin")
 };
  
-// Aviso para la UI: "la fase cambió". El HUD se va a suscribir a esto.
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPhaseChanged, EPEV2Phase, NewPhase);
  
 UCLASS()
@@ -29,10 +29,10 @@ class PARCIAL2_API APEV2_GameState : public AGameState
 public:
 	APEV2_GameState();
  
-	// Obligatoria para cualquier variable replicada (paso 3 de la clase 5)
+	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
  
-	// SOLO el servidor puede cambiar la fase
+	
 	void SetPhase(EPEV2Phase NewPhase);
  
 	UFUNCTION(BlueprintPure, Category = "Match")
@@ -42,11 +42,11 @@ public:
 	FOnPhaseChanged OnPhaseChanged;
  
 protected:
-	// Variable replicada con RepNotify (paso 2 de la clase 6)
+	
 	UPROPERTY(ReplicatedUsing = OnRep_Phase)
 	EPEV2Phase Phase;
  
-	// Se ejecuta en los CLIENTES cuando llega un cambio de Phase
+	
 	UFUNCTION()
 	void OnRep_Phase();
 };
