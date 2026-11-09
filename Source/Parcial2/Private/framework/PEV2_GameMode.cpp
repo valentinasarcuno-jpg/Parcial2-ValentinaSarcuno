@@ -22,7 +22,7 @@ void APEV2_GameMode::BeginPlay()
 	Super::BeginPlay();
  
 	
-	GetWorldTimerManager().SetTimer(TestTimer, this, &APEV2_GameMode::TestChangePhase, 5.0f, false);
+	GetWorldTimerManager().SetTimer(TestTimer, this, &APEV2_GameMode::TestChangePhase, 2.0f, false);
 }
  
 void APEV2_GameMode::TestChangePhase()
