@@ -6,6 +6,8 @@
 #include "GameFramework/GameMode.h"
 #include "PEV2_GameMode.generated.h"
  
+class APEV2_PlayerState;
+ 
 UCLASS()
 class PARCIAL2_API APEV2_GameMode : public AGameMode
 {
@@ -14,12 +16,36 @@ class PARCIAL2_API APEV2_GameMode : public AGameMode
 public:
 	APEV2_GameMode();
  
+	virtual void Logout(AController* Exiting) override;
+ 
+	
+	void RequestStartMatch(APlayerController* Requester);
+ 
+	
+	void HandlePlayerEliminated(APEV2_PlayerState* Victim);
+ 
 protected:
-	virtual void BeginPlay() override;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Match")
+	FName ArenaSpawnTag;
+ 
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Match")
+	float ReturnToLobbyDelay;
  
 private:
-	
-	FTimerHandle TestTimer;
-	void TestChangePhase();
+
+	TArray<TWeakObjectPtr<APEV2_PlayerState>> MatchParticipants;
+ 
+	FTimerHandle ReturnToLobbyTimer;
+	FTimerHandle LogoutCheckTimer;
+ 
+	void TeleportPlayersToPoints(const TArray<AActor*>& Points);
+	void TeleportPlayersToArena();
+	void TeleportPlayersToBalcony();
+ 
+	void CheckWinCondition();
+	void FinishRound(nullptr_t Winner);
+	void ResetToLobby();
 };
  

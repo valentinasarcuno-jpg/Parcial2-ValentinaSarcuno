@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PEV2_PlayerState.h"
 #include "GameFramework/GameState.h"
 #include "PEV2_GameState.generated.h"
 
@@ -37,7 +38,10 @@ public:
  
 	UFUNCTION(BlueprintPure, Category = "Match")
 	EPEV2Phase GetPhase() const { return Phase; }
- 
+
+	void Multicast_PlayerEliminated(const FString& String);
+	void SetWinner(std::nullptr_t Null);
+
 	UPROPERTY(BlueprintAssignable, Category = "Match")
 	FOnPhaseChanged OnPhaseChanged;
  

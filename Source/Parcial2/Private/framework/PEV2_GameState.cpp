@@ -40,7 +40,15 @@ void APEV2_GameState::SetPhase(EPEV2Phase NewPhase)
 	
 	OnRep_Phase();
 }
- 
+
+void APEV2_GameState::Multicast_PlayerEliminated(const FString& String)
+{
+}
+
+void APEV2_GameState::SetWinner(std::nullptr_t Null)
+{
+}
+
 void APEV2_GameState::OnRep_Phase()
 {
 	
