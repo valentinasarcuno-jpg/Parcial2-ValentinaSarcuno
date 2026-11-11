@@ -5,7 +5,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Character.h"
-#include "Framework/PEV2_GameState.h"
+#include "Framework/PEV2_GameMode.h"
 #include "Framework/PEV2_PlayerState.h"
  
 // Sets default values
@@ -13,9 +13,9 @@ AA_Laser::AA_Laser()
 {
     PrimaryActorTick.bCanEverTick = true;
  
-    
+   
     bReplicates = true;
-    
+ 
     SetReplicatingMovement(true);
  
     CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
@@ -29,7 +29,7 @@ AA_Laser::AA_Laser()
     MoveSpeed = 400.0f;
     MoveDirection = FVector(1.0f, 0.0f, 0.0f);
  
-   
+ 
     InitialLifeSpan = 10.0f;
 }
  
@@ -46,7 +46,6 @@ void AA_Laser::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
  
-   
     if (!HasAuthority())
     {
         return;
@@ -75,18 +74,16 @@ void AA_Laser::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Other
         return;
     }
  
-   
-    const APEV2_GameState* GS = GetWorld()->GetGameState<APEV2_GameState>();
-    if (!GS || GS->GetPhase() != EPEV2Phase::Playing)
+    APEV2_PlayerState* PS = HitPlayer->GetPlayerState<APEV2_PlayerState>();
+    if (!PS || PS->IsDead())
     {
         return;
     }
  
- 
-    APEV2_PlayerState* PS = HitPlayer->GetPlayerState<APEV2_PlayerState>();
-    if (PS && !PS->IsDead())
+    
+    if (APEV2_GameMode* GM = GetWorld()->GetAuthGameMode<APEV2_GameMode>())
     {
-        PS->SetDead(true);
+        GM->HandlePlayerEliminated(PS);
     }
 }
  

@@ -25,7 +25,7 @@ public:
 	void HandlePlayerEliminated(APEV2_PlayerState* Victim);
  
 protected:
-
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Match")
 	FName ArenaSpawnTag;
  
@@ -34,7 +34,7 @@ protected:
 	float ReturnToLobbyDelay;
  
 private:
-
+	
 	TArray<TWeakObjectPtr<APEV2_PlayerState>> MatchParticipants;
  
 	FTimerHandle ReturnToLobbyTimer;
@@ -45,7 +45,7 @@ private:
 	void TeleportPlayersToBalcony();
  
 	void CheckWinCondition();
-	void FinishRound(nullptr_t Winner);
+	void FinishRound(APEV2_PlayerState* Winner);
 	void ResetToLobby();
 };
  

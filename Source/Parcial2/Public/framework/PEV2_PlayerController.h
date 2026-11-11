@@ -20,7 +20,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Match")
 	void RequestStartMatch();
  
-
+	
 	UFUNCTION(Client, Reliable)
 	void Client_NotifyEliminated();
  

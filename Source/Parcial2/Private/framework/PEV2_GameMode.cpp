@@ -19,7 +19,7 @@ APEV2_GameMode::APEV2_GameMode()
     GameStateClass = APEV2_GameState::StaticClass();
     PlayerStateClass = APEV2_PlayerState::StaticClass();
  
-  
+    
     bDelayedStart = false;
  
     ArenaSpawnTag = FName(TEXT("ArenaSpawn"));
@@ -30,7 +30,7 @@ void APEV2_GameMode::Logout(AController* Exiting)
 {
     Super::Logout(Exiting);
  
-   
+    
     const APEV2_GameState* GS = GetGameState<APEV2_GameState>();
     if (GS && GS->GetPhase() == EPEV2Phase::Playing)
     {
@@ -40,14 +40,16 @@ void APEV2_GameMode::Logout(AController* Exiting)
  
 void APEV2_GameMode::RequestStartMatch(APlayerController* Requester)
 {
+   
  
+   
     APEV2_GameState* GS = GetGameState<APEV2_GameState>();
     if (!GS || GS->GetPhase() != EPEV2Phase::Lobby)
     {
         return;
     }
  
-    
+   
     if (!Requester || !Requester->IsLocalController())
     {
         return;
@@ -72,7 +74,7 @@ void APEV2_GameMode::RequestStartMatch(APlayerController* Requester)
  
 void APEV2_GameMode::HandlePlayerEliminated(APEV2_PlayerState* Victim)
 {
-   
+    
     APEV2_GameState* GS = GetGameState<APEV2_GameState>();
     if (!GS || GS->GetPhase() != EPEV2Phase::Playing)
     {
@@ -95,16 +97,16 @@ void APEV2_GameMode::HandlePlayerEliminated(APEV2_PlayerState* Victim)
    
     Victim->SetDead(true);
  
-   
+    
     if (APEV2_PlayerController* PC = Cast<APEV2_PlayerController>(Victim->GetPlayerController()))
     {
         PC->Client_NotifyEliminated();
     }
  
-  
+   
     GS->Multicast_PlayerEliminated(Victim->GetPlayerName());
  
-   
+  
     CheckWinCondition();
 }
  
@@ -134,18 +136,17 @@ void APEV2_GameMode::CheckWinCondition()
         }
     }
  
-  
    
     const bool bSolo = MatchParticipants.Num() == 1;
     const bool bRoundOver = bSolo ? (Alive == 0) : (Alive <= 1);
  
     if (bRoundOver)
     {
-        FinishRound(static_cast<nullptr_t>(Alive == 1 ? LastAlive : nullptr));
+        FinishRound(Alive == 1 ? LastAlive : nullptr);
     }
 }
  
-void APEV2_GameMode::FinishRound(nullptr_t Winner)
+void APEV2_GameMode::FinishRound(APEV2_PlayerState* Winner)
 {
     APEV2_GameState* GS = GetGameState<APEV2_GameState>();
     if (!GS)
@@ -153,11 +154,11 @@ void APEV2_GameMode::FinishRound(nullptr_t Winner)
         return;
     }
  
-  
+    
     GS->SetWinner(Winner);
     GS->SetPhase(EPEV2Phase::Ended);
  
-   
+    
     GetWorldTimerManager().SetTimer(ReturnToLobbyTimer, this, &APEV2_GameMode::ResetToLobby, ReturnToLobbyDelay, false);
 }
  
@@ -169,7 +170,7 @@ void APEV2_GameMode::ResetToLobby()
         return;
     }
  
- 
+    
     for (APlayerState* Player : GS->PlayerArray)
     {
         if (APEV2_PlayerState* PS = Cast<APEV2_PlayerState>(Player))
@@ -187,7 +188,7 @@ void APEV2_GameMode::ResetToLobby()
  
 void APEV2_GameMode::TeleportPlayersToArena()
 {
-  
+    
     TArray<AActor*> ArenaPoints;
     UGameplayStatics::GetAllActorsWithTag(GetWorld(), ArenaSpawnTag, ArenaPoints);
  
@@ -207,7 +208,7 @@ void APEV2_GameMode::TeleportPlayersToArena()
  
 void APEV2_GameMode::TeleportPlayersToBalcony()
 {
- 
+    // El Balcón son los PlayerStart del mapa
     TArray<AActor*> BalconyPoints;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), BalconyPoints);
  
@@ -237,18 +238,19 @@ void APEV2_GameMode::TeleportPlayersToPoints(const TArray<AActor*>& Points)
             continue;
         }
  
-       
+        
         const AActor* Target = Points[Index % Points.Num()];
         const FVector Location = Target->GetActorLocation() + FVector(0.f, 0.f, 100.f); 
         const FRotator Rotation = Target->GetActorRotation();
  
         if (!Pawn->TeleportTo(Location, Rotation))
         {
-           
+            
             Pawn->SetActorLocationAndRotation(Location, Rotation, false, nullptr, ETeleportType::TeleportPhysics);
         }
  
         ++Index;
     }
 }
+ 
  

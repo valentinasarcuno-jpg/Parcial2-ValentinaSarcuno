@@ -12,7 +12,7 @@ void APEV2_PlayerController::BeginPlay()
 	
 	Super::BeginPlay();
  
-
+	
 	if (IsLocalController() && HUDWidgetClass)
 	{
 		HUDWidget = CreateWidget<UUserWidget>(this, HUDWidgetClass);
@@ -40,11 +40,10 @@ void APEV2_PlayerController::Server_RequestStartMatch_Implementation()
  
 void APEV2_PlayerController::Client_NotifyEliminated_Implementation()
 {
-
+	
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("¡QUEDASTE ELIMINADO!"));
 	}
 }
  
-
