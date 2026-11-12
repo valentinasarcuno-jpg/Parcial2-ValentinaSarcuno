@@ -40,9 +40,9 @@ private:
 	FTimerHandle ReturnToLobbyTimer;
 	FTimerHandle LogoutCheckTimer;
  
-	void TeleportPlayersToPoints(const TArray<AActor*>& Points);
+	void TeleportPawnTo(APawn* Pawn, const AActor* Target);
 	void TeleportPlayersToArena();
-	void TeleportPlayersToBalcony();
+	void SendPlayerToBalcony(APlayerController* PC);
  
 	void CheckWinCondition();
 	void FinishRound(APEV2_PlayerState* Winner);

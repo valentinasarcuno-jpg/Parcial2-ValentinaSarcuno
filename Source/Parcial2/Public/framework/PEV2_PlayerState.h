@@ -16,22 +16,33 @@ public:
  
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
  
-	
+
 	void SetDead(bool bNewDead);
+	void SetSurvivalTime(float NewTime);
  
+	
 	UFUNCTION(BlueprintPure, Category = "Estado")
 	bool IsDead() const { return bIsDead; }
  
+	
+	UFUNCTION(BlueprintPure, Category = "Estado")
+	float GetSurvivalTime() const { return SurvivalTime; }
+ 
 protected:
-
+	
 	UPROPERTY(ReplicatedUsing = OnRep_IsDead)
 	bool bIsDead;
  
-
+	
+	UPROPERTY(Replicated)
+	float SurvivalTime;
+ 
+	
 	UFUNCTION()
 	void OnRep_IsDead();
  
+private:
 	
-	void UpdatePawnForDeathState();
+	void NotifyListChanged();
 };
  

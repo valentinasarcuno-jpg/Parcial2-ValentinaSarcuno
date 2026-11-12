@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Engine/Engine.h"
 #include "Framework/PEV2_GameMode.h"
+#include "HUDWidget.h"
  
 void APEV2_PlayerController::BeginPlay()
 {
@@ -41,8 +42,13 @@ void APEV2_PlayerController::Server_RequestStartMatch_Implementation()
 void APEV2_PlayerController::Client_NotifyEliminated_Implementation()
 {
 	
-	if (GEngine)
+	if (UHUDWidget* HUD = Cast<UHUDWidget>(HUDWidget))
 	{
+		HUD->ShowStatusMessage(FText::FromString(TEXT("Caíste. Mirá la partida desde el Balcón.")));
+	}
+	else if (GEngine)
+	{
+		
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("¡QUEDASTE ELIMINADO!"));
 	}
 }

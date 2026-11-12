@@ -18,6 +18,8 @@ enum class EPEV2Phase : uint8
  
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPhaseChanged, EPEV2Phase, NewPhase);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerFell, const FString&, PlayerName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerListChanged);
  
 UCLASS()
 class PARCIAL2_API APEV2_GameState : public AGameState
@@ -30,11 +32,15 @@ public:
     
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
  
-   
+    
     void SetPhase(EPEV2Phase NewPhase);
  
-    
+  
     void SetWinner(APlayerState* NewWinner);
+ 
+   
+    void StartRoundClock();
+    void StopRoundClock();
  
     UFUNCTION(BlueprintPure, Category = "Match")
     EPEV2Phase GetPhase() const { return Phase; }
@@ -42,8 +48,20 @@ public:
     UFUNCTION(BlueprintPure, Category = "Match")
     APlayerState* GetWinner() const { return Winner; }
  
+   
+    UFUNCTION(BlueprintPure, Category = "Match")
+    float GetRoundElapsedSeconds() const;
+ 
     UPROPERTY(BlueprintAssignable, Category = "Match")
     FOnPhaseChanged OnPhaseChanged;
+ 
+
+    UPROPERTY(BlueprintAssignable, Category = "Match")
+    FOnPlayerFell OnPlayerFell;
+ 
+   
+    UPROPERTY(BlueprintAssignable, Category = "Match")
+    FOnPlayerListChanged OnPlayerListChanged;
  
    
     UFUNCTION(NetMulticast, Unreliable)
@@ -59,7 +77,14 @@ protected:
     TObjectPtr<APlayerState> Winner;
  
     
+    UPROPERTY(Replicated)
+    float RoundStartTime;
+ 
+    UPROPERTY(Replicated)
+    float RoundEndTime;
+ 
+    
     UFUNCTION()
     void OnRep_Phase();
 };
-  
+ 

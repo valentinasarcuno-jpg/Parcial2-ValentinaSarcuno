@@ -3,28 +3,31 @@
 
 #include "Framework/PEV2_GameState.h"
  
-#include "Engine/Engine.h"
 #include "Net/UnrealNetwork.h"
  
 APEV2_GameState::APEV2_GameState()
 {
-    
+   
     Phase = EPEV2Phase::Lobby;
     Winner = nullptr;
+    RoundStartTime = 0.0f;
+    RoundEndTime = 0.0f;
 }
  
 void APEV2_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-    
+   
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
  
     DOREPLIFETIME(APEV2_GameState, Phase);
     DOREPLIFETIME(APEV2_GameState, Winner);
+    DOREPLIFETIME(APEV2_GameState, RoundStartTime);
+    DOREPLIFETIME(APEV2_GameState, RoundEndTime);
 }
  
 void APEV2_GameState::SetPhase(EPEV2Phase NewPhase)
 {
-   
+    
     if (!HasAuthority())
     {
         return;
@@ -51,37 +54,50 @@ void APEV2_GameState::SetWinner(APlayerState* NewWinner)
     Winner = NewWinner;
 }
  
-void APEV2_GameState::OnRep_Phase()
+void APEV2_GameState::StartRoundClock()
 {
-   
-    OnPhaseChanged.Broadcast(Phase);
+    if (!HasAuthority())
+    {
+        return;
+    }
  
     
-    if (GEngine)
-    {
-        const TCHAR* Quien = HasAuthority() ? TEXT("SERVIDOR") : TEXT("CLIENTE");
-        GEngine->AddOnScreenDebugMessage(
-            -1, 4.0f, FColor::Yellow,
-            FString::Printf(TEXT("[%s] Fase de la partida: %s"), Quien, *UEnum::GetValueAsString(Phase)));
+    RoundStartTime = GetServerWorldTimeSeconds();
+    RoundEndTime = 0.0f;
+}
  
-        if (Phase == EPEV2Phase::Ended)
-        {
-            const FString WinnerName = Winner ? Winner->GetPlayerName() : FString(TEXT("nadie (empate)"));
-            GEngine->AddOnScreenDebugMessage(
-                -1, 6.0f, FColor::Green,
-                FString::Printf(TEXT("[%s] GANADOR: %s"), Quien, *WinnerName));
-        }
+void APEV2_GameState::StopRoundClock()
+{
+    if (!HasAuthority())
+    {
+        return;
     }
+ 
+    RoundEndTime = GetServerWorldTimeSeconds();
+}
+ 
+float APEV2_GameState::GetRoundElapsedSeconds() const
+{
+    if (Phase == EPEV2Phase::Lobby)
+    {
+        return 0.0f;
+    }
+ 
+    const bool bFrozen = (Phase == EPEV2Phase::Ended && RoundEndTime > 0.0f);
+    const float End = bFrozen ? RoundEndTime : GetServerWorldTimeSeconds();
+ 
+    return FMath::Max(0.0f, End - RoundStartTime);
+}
+ 
+void APEV2_GameState::OnRep_Phase()
+{
+  
+    OnPhaseChanged.Broadcast(Phase);
 }
  
 void APEV2_GameState::Multicast_PlayerEliminated_Implementation(const FString& PlayerName)
 {
-    
-    if (GEngine)
-    {
-        GEngine->AddOnScreenDebugMessage(
-            -1, 4.0f, FColor::Orange,
-            FString::Printf(TEXT("%s fue eliminado"), *PlayerName));
-    }
+   
+    OnPlayerFell.Broadcast(PlayerName);
 }
  

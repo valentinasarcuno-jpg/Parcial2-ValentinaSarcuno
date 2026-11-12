@@ -7,77 +7,108 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
-
+ 
 void UMainMenuUIWidget::NativeConstruct()
 {
-	Super::NativeConstruct();
-
-	// (Añadimos la funcion al boton)
-	if (BTN_Join)
-	{
-		BTN_Join->OnClicked.AddDynamic(this, &UMainMenuUIWidget::OnJoinClicked);
-	}
-	
-	if (BTN_Host)
-	{
-		BTN_Host->OnClicked.AddDynamic(this, &UMainMenuUIWidget::OnHostClicked);
-	}
-
-	if (BTN_Quit)
-	{
-		BTN_Quit->OnClicked.AddDynamic(this, &UMainMenuUIWidget::OnQuitClicked);
-	}
+    Super::NativeConstruct();
+ 
+    
+    if (BTN_Join)
+    {
+       BTN_Join->OnClicked.AddDynamic(this, &UMainMenuUIWidget::OnJoinClicked);
+    }
+    
+    if (BTN_Host)
+    {
+       BTN_Host->OnClicked.AddDynamic(this, &UMainMenuUIWidget::OnHostClicked);
+    }
+ 
+    if (BTN_Quit)
+    {
+       BTN_Quit->OnClicked.AddDynamic(this, &UMainMenuUIWidget::OnQuitClicked);
+    }
 }
-
-
-
+ 
+ 
+ 
 void UMainMenuUIWidget::OnHostClicked()
 {
-	
-	if (APlayerController* PC = GetOwningPlayer())
-	{
-		PC->SetInputMode(FInputModeGameOnly());
-		PC->SetShowMouseCursor(false);
-	}
+   
+    if (APlayerController* PC = GetOwningPlayer())
+    {
+        PC->SetInputMode(FInputModeGameOnly());
+        PC->SetShowMouseCursor(false);
+    }
  
-	
-	UGameplayStatics::OpenLevelBySoftObjectPtr(this, Lvl_ThirdPerson, true, TEXT("listen"));
+   
+    const FString Options = FString::Printf(TEXT("listen?Name=%s"), *GetChosenPlayerName());
+    UGameplayStatics::OpenLevelBySoftObjectPtr(this, Lvl_ThirdPerson, true, Options);
 }
-
+ 
 void UMainMenuUIWidget::OnJoinClicked()
 {
-	if (!TXT_IP)
-	{
-		return;
-	}
+    if (!TXT_IP)
+    {
+        return;
+    }
  
-	
-	const FString IP = TXT_IP->GetText().ToString().TrimStartAndEnd();
+   
+    const FString IP = TXT_IP->GetText().ToString().TrimStartAndEnd();
  
-	if (IP.IsEmpty())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Falta escribir la IP del host para unirse."));
-		return;
-	}
+    if (IP.IsEmpty())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Falta escribir la IP del host para unirse."));
+        return;
+    }
  
-	if (APlayerController* PC = GetOwningPlayer())
-	{
-		PC->SetInputMode(FInputModeGameOnly());
-		PC->SetShowMouseCursor(false);
-	}
+    if (APlayerController* PC = GetOwningPlayer())
+    {
+        PC->SetInputMode(FInputModeGameOnly());
+        PC->SetShowMouseCursor(false);
+    }
  
-	
-	UGameplayStatics::OpenLevel(this, FName(*IP));
+   
+    const FString Options = FString::Printf(TEXT("Name=%s"), *GetChosenPlayerName());
+    UGameplayStatics::OpenLevel(this, FName(*IP), true, Options);
 }
-
+ 
+FString UMainMenuUIWidget::GetChosenPlayerName() const
+{
+    FString Raw = TXT_PlayerTAG ? TXT_PlayerTAG->GetText().ToString().TrimStartAndEnd() : FString();
+ 
+   
+    FString Clean;
+    for (const TCHAR Char : Raw)
+    {
+        if (FChar::IsAlnum(Char) || Char == TEXT('-') || Char == TEXT('_'))
+        {
+            Clean.AppendChar(Char);
+        }
+        else if (Char == TEXT(' '))
+        {
+            Clean.AppendChar(TEXT('_'));
+        }
+    }
+ 
+    
+    Clean = Clean.Left(15);
+ 
+    if (Clean.IsEmpty())
+    {
+        Clean = TEXT("Jugador");
+    }
+ 
+    return Clean;
+}
+ 
 void UMainMenuUIWidget::OnSettingsClicked()
 {
 }
  
 void UMainMenuUIWidget::OnQuitClicked()
 {
-	// (Cerrar juego)
-	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
-	UKismetSystemLibrary::QuitGame(this, PlayerController, EQuitPreference::Quit, true);
+   
+    APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+    UKismetSystemLibrary::QuitGame(this, PlayerController, EQuitPreference::Quit, true);
 }
-
+ 

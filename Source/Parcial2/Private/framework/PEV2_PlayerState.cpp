@@ -3,14 +3,13 @@
 
 #include "Framework/PEV2_PlayerState.h"
  
-#include "Engine/Engine.h"
-#include "GameFramework/Character.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "Framework/PEV2_GameState.h"
 #include "Net/UnrealNetwork.h"
  
 APEV2_PlayerState::APEV2_PlayerState()
 {
 	bIsDead = false;
+	SurvivalTime = 0.0f;
 }
  
 void APEV2_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -19,6 +18,7 @@ void APEV2_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
  
 	
 	DOREPLIFETIME(APEV2_PlayerState, bIsDead);
+	DOREPLIFETIME(APEV2_PlayerState, SurvivalTime);
 }
  
 void APEV2_PlayerState::SetDead(bool bNewDead)
@@ -35,42 +35,29 @@ void APEV2_PlayerState::SetDead(bool bNewDead)
 	OnRep_IsDead();
 }
  
-void APEV2_PlayerState::OnRep_IsDead()
+void APEV2_PlayerState::SetSurvivalTime(float NewTime)
 {
-	UpdatePawnForDeathState();
- 
-	
-	if (GEngine)
-	{
-		const TCHAR* Quien = HasAuthority() ? TEXT("SERVIDOR") : TEXT("CLIENTE");
-		GEngine->AddOnScreenDebugMessage(
-			-1, 4.0f, FColor::Red,
-			FString::Printf(TEXT("[%s] %s: eliminado = %s"), Quien, *GetPlayerName(),
-							bIsDead ? TEXT("SI") : TEXT("NO")));
-	}
-}
- 
-void APEV2_PlayerState::UpdatePawnForDeathState()
-{
-	
-	ACharacter* Character = Cast<ACharacter>(GetPawn());
-	if (!Character)
+	if (!HasAuthority())
 	{
 		return;
 	}
  
-	Character->SetActorHiddenInGame(bIsDead);
-	Character->SetActorEnableCollision(!bIsDead);
+	SurvivalTime = NewTime;
+}
  
-	if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
+void APEV2_PlayerState::OnRep_IsDead()
+{
+	
+	NotifyListChanged();
+}
+ 
+void APEV2_PlayerState::NotifyListChanged()
+{
+	if (UWorld* World = GetWorld())
 	{
-		if (bIsDead)
+		if (APEV2_GameState* GS = World->GetGameState<APEV2_GameState>())
 		{
-			Movement->DisableMovement();
-		}
-		else
-		{
-			Movement->SetMovementMode(MOVE_Walking);
+			GS->OnPlayerListChanged.Broadcast();
 		}
 	}
 }

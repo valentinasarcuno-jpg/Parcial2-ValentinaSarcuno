@@ -15,7 +15,7 @@
  
 APEV2_GameMode::APEV2_GameMode()
 {
-    
+   
     GameStateClass = APEV2_GameState::StaticClass();
     PlayerStateClass = APEV2_PlayerState::StaticClass();
  
@@ -40,34 +40,34 @@ void APEV2_GameMode::Logout(AController* Exiting)
  
 void APEV2_GameMode::RequestStartMatch(APlayerController* Requester)
 {
-   
- 
-   
+    
     APEV2_GameState* GS = GetGameState<APEV2_GameState>();
     if (!GS || GS->GetPhase() != EPEV2Phase::Lobby)
     {
         return;
     }
  
-   
+    
     if (!Requester || !Requester->IsLocalController())
     {
         return;
     }
  
-    
+   
     MatchParticipants.Empty();
     for (APlayerState* Player : GS->PlayerArray)
     {
         if (APEV2_PlayerState* PS = Cast<APEV2_PlayerState>(Player))
         {
             PS->SetDead(false);
+            PS->SetSurvivalTime(0.0f);
             MatchParticipants.Add(PS);
         }
     }
     GS->SetWinner(nullptr);
+    GS->StartRoundClock();
  
-    
+   
     TeleportPlayersToArena();
     GS->SetPhase(EPEV2Phase::Playing);
 }
@@ -86,7 +86,7 @@ void APEV2_GameMode::HandlePlayerEliminated(APEV2_PlayerState* Victim)
         return;
     }
  
-   
+  
     const bool bIsParticipant = MatchParticipants.ContainsByPredicate(
         [Victim](const TWeakObjectPtr<APEV2_PlayerState>& P) { return P.Get() == Victim; });
     if (!bIsParticipant)
@@ -95,10 +95,18 @@ void APEV2_GameMode::HandlePlayerEliminated(APEV2_PlayerState* Victim)
     }
  
    
+    Victim->SetSurvivalTime(GS->GetRoundElapsedSeconds());
     Victim->SetDead(true);
  
-    
-    if (APEV2_PlayerController* PC = Cast<APEV2_PlayerController>(Victim->GetPlayerController()))
+   
+    APlayerController* VictimPC = Victim->GetPlayerController();
+    if (VictimPC)
+    {
+        SendPlayerToBalcony(VictimPC);
+    }
+ 
+   
+    if (APEV2_PlayerController* PC = Cast<APEV2_PlayerController>(VictimPC))
     {
         PC->Client_NotifyEliminated();
     }
@@ -106,7 +114,7 @@ void APEV2_GameMode::HandlePlayerEliminated(APEV2_PlayerState* Victim)
    
     GS->Multicast_PlayerEliminated(Victim->GetPlayerName());
  
-  
+    
     CheckWinCondition();
 }
  
@@ -154,11 +162,19 @@ void APEV2_GameMode::FinishRound(APEV2_PlayerState* Winner)
         return;
     }
  
-    
+ 
+    if (Winner)
+    {
+        Winner->SetSurvivalTime(GS->GetRoundElapsedSeconds());
+    }
+ 
+    GS->StopRoundClock(); 
+ 
+   
     GS->SetWinner(Winner);
     GS->SetPhase(EPEV2Phase::Ended);
  
-    
+   
     GetWorldTimerManager().SetTimer(ReturnToLobbyTimer, this, &APEV2_GameMode::ResetToLobby, ReturnToLobbyDelay, false);
 }
  
@@ -171,24 +187,26 @@ void APEV2_GameMode::ResetToLobby()
     }
  
     
-    for (APlayerState* Player : GS->PlayerArray)
+    for (const TWeakObjectPtr<APEV2_PlayerState>& Weak : MatchParticipants)
     {
-        if (APEV2_PlayerState* PS = Cast<APEV2_PlayerState>(Player))
+        const APEV2_PlayerState* PS = Weak.Get();
+        if (PS && !PS->IsDead())
         {
-            PS->SetDead(false);
+            if (APlayerController* PC = PS->GetPlayerController())
+            {
+                SendPlayerToBalcony(PC);
+            }
         }
     }
  
     MatchParticipants.Empty();
-    TeleportPlayersToBalcony();
- 
     GS->SetWinner(nullptr);
     GS->SetPhase(EPEV2Phase::Lobby);
 }
  
 void APEV2_GameMode::TeleportPlayersToArena()
 {
-    
+    // Buscamos los puntos de la arena por su etiqueta
     TArray<AActor*> ArenaPoints;
     UGameplayStatics::GetAllActorsWithTag(GetWorld(), ArenaSpawnTag, ArenaPoints);
  
@@ -203,31 +221,6 @@ void APEV2_GameMode::TeleportPlayersToArena()
         return;
     }
  
-    TeleportPlayersToPoints(ArenaPoints);
-}
- 
-void APEV2_GameMode::TeleportPlayersToBalcony()
-{
-    // El Balcón son los PlayerStart del mapa
-    TArray<AActor*> BalconyPoints;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), BalconyPoints);
- 
-    if (BalconyPoints.Num() == 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No hay PlayerStart en el mapa para volver al Balcón."));
-        return;
-    }
- 
-    TeleportPlayersToPoints(BalconyPoints);
-}
- 
-void APEV2_GameMode::TeleportPlayersToPoints(const TArray<AActor*>& Points)
-{
-    if (Points.Num() == 0)
-    {
-        return;
-    }
- 
     int32 Index = 0;
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
     {
@@ -238,19 +231,48 @@ void APEV2_GameMode::TeleportPlayersToPoints(const TArray<AActor*>& Points)
             continue;
         }
  
-        
-        const AActor* Target = Points[Index % Points.Num()];
-        const FVector Location = Target->GetActorLocation() + FVector(0.f, 0.f, 100.f); 
-        const FRotator Rotation = Target->GetActorRotation();
- 
-        if (!Pawn->TeleportTo(Location, Rotation))
-        {
-            
-            Pawn->SetActorLocationAndRotation(Location, Rotation, false, nullptr, ETeleportType::TeleportPhysics);
-        }
- 
+       
+        TeleportPawnTo(Pawn, ArenaPoints[Index % ArenaPoints.Num()]);
         ++Index;
     }
 }
  
+void APEV2_GameMode::SendPlayerToBalcony(APlayerController* PC)
+{
+    APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+    if (!Pawn)
+    {
+        return;
+    }
+ 
+   
+    TArray<AActor*> BalconyPoints;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), BalconyPoints);
+ 
+    if (BalconyPoints.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No hay PlayerStart en el mapa para mandar al Balcón."));
+        return;
+    }
+ 
+   
+    TeleportPawnTo(Pawn, BalconyPoints[FMath::RandRange(0, BalconyPoints.Num() - 1)]);
+}
+ 
+void APEV2_GameMode::TeleportPawnTo(APawn* Pawn, const AActor* Target)
+{
+    if (!Pawn || !Target)
+    {
+        return;
+    }
+ 
+    const FVector Location = Target->GetActorLocation() + FVector(0.f, 0.f, 100.f); 
+    const FRotator Rotation = Target->GetActorRotation();
+ 
+    if (!Pawn->TeleportTo(Location, Rotation))
+    {
+        
+        Pawn->SetActorLocationAndRotation(Location, Rotation, false, nullptr, ETeleportType::TeleportPhysics);
+    }
+}
  

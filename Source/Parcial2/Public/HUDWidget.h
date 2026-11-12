@@ -4,43 +4,75 @@
  
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Framework/PEV2_GameState.h" // necesario para el tipo EPEV2Phase
+#include "Framework/PEV2_GameState.h" 
 #include "HUDWidget.generated.h"
  
 class UButton;
+class UTextBlock;
+class UWidget;
  
 UCLASS()
 class PARCIAL2_API UHUDWidget : public UUserWidget
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
+ 
+public:
     
+    void ShowStatusMessage(const FText& Message);
+ 
 protected:
+    virtual void NativeConstruct() override;
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+ 
+  
+    UPROPERTY(meta = (BindWidget))
+    UButton* BTN_BackToMenu;
+ 
+   
+    UPROPERTY(meta = (BindWidget))
+    UButton* BTN_StartMatch;
+ 
     
-	virtual void NativeConstruct() override;
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+    UPROPERTY(meta = (BindWidgetOptional))
+    UTextBlock* TXT_Timer;       
  
-
-	UPROPERTY(meta = (BindWidget))
-	UButton* BTN_BackToMenu;
+    UPROPERTY(meta = (BindWidgetOptional))
+    UTextBlock* TXT_Status;      
  
-	
-	UPROPERTY(meta = (BindWidget))
-	UButton* BTN_StartMatch;
-    
-	UFUNCTION()
-	void OnBackToMenuClicked();
+    UPROPERTY(meta = (BindWidgetOptional))
+    UTextBlock* TXT_FallMessage; 
  
-	UFUNCTION()
-	void OnStartMatchClicked();
+  
+    UPROPERTY(meta = (BindWidgetOptional))
+    UWidget* EndScreen;
  
-	
-	UFUNCTION()
-	void HandlePhaseChanged(EPEV2Phase NewPhase);
+    UPROPERTY(meta = (BindWidgetOptional))
+    UTextBlock* TXT_WinnerName;
+ 
+    UFUNCTION()
+    void OnBackToMenuClicked();
+ 
+    UFUNCTION()
+    void OnStartMatchClicked();
+ 
+   
+    UFUNCTION()
+    void HandlePhaseChanged(EPEV2Phase NewPhase);
+ 
+   
+    UFUNCTION()
+    void HandlePlayerFell(const FString& PlayerName);
  
 private:
-	
-	bool bBoundToGameState = false;
-	void TryBindToGameState();
-	void RefreshStartButton(EPEV2Phase Phase);
+    
+    bool bBoundToGameState = false;
+    float UpdateAccumulator = 0.0f;
+    FTimerHandle FallMessageTimer;
+ 
+    void TryBindToGameState();
+    void RefreshForPhase(EPEV2Phase Phase);
+    void RefreshEndScreen(EPEV2Phase Phase);
+    void UpdateTimer();
+    void HideFallMessage();
 };
  
