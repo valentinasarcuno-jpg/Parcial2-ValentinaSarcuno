@@ -37,6 +37,6 @@ protected:
 	FLinearColor AliveColor = FLinearColor::White;
  
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Colores")
-	FLinearColor FallenColor = FLinearColor(1.0f, 0.15f, 0.15f, 1.0f);
+	FLinearColor FallenColor = FLinearColor(0.55f, 0.05f, 0.08f, 1.0f);
 };
  

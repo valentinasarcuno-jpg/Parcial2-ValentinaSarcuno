@@ -183,7 +183,7 @@ void UHUDWidget::RefreshEndScreen(EPEV2Phase Phase)
     {
         TXT_WinnerName->SetText(Winner
             ? FText::FromString(Winner->GetPlayerName())
-            : FText::FromString(TEXT("Nadie (empate)")));
+            : FText::FromString(TEXT("Nadie")));
     }
  
    

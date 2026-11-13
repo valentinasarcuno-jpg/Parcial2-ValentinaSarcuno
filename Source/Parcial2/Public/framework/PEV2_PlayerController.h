@@ -25,12 +25,16 @@ public:
 	void Client_NotifyEliminated();
  
 protected:
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UUserWidget> HUDWidgetClass;
  
 	UPROPERTY()
 	TObjectPtr<UUserWidget> HUDWidget;
+ 
+	
+	UFUNCTION(Server, Reliable)
+	void Server_SetPlayerName(const FString& NewName);
  
 	
 	UFUNCTION(Server, Reliable)

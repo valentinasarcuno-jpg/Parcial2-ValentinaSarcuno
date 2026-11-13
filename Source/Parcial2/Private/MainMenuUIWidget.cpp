@@ -1,8 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
-
+ 
+ 
 #include "MainMenuUIWidget.h"
 #include "Components/Button.h"
+#include "Core/PEV2_GameInstance.h"
+#include "Engine/Engine.h"
 #include "Components/EditableText.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
@@ -33,7 +35,7 @@ void UMainMenuUIWidget::NativeConstruct()
  
 void UMainMenuUIWidget::OnHostClicked()
 {
-   
+    
     if (APlayerController* PC = GetOwningPlayer())
     {
         PC->SetInputMode(FInputModeGameOnly());
@@ -41,8 +43,10 @@ void UMainMenuUIWidget::OnHostClicked()
     }
  
    
-    const FString Options = FString::Printf(TEXT("listen?Name=%s"), *GetChosenPlayerName());
-    UGameplayStatics::OpenLevelBySoftObjectPtr(this, Lvl_ThirdPerson, true, Options);
+    SaveChosenName();
+ 
+   
+    UGameplayStatics::OpenLevelBySoftObjectPtr(this, Lvl_ThirdPerson, true, TEXT("listen"));
 }
  
 void UMainMenuUIWidget::OnJoinClicked()
@@ -67,38 +71,41 @@ void UMainMenuUIWidget::OnJoinClicked()
         PC->SetShowMouseCursor(false);
     }
  
+    
+    SaveChosenName();
+ 
    
-    const FString Options = FString::Printf(TEXT("Name=%s"), *GetChosenPlayerName());
-    UGameplayStatics::OpenLevel(this, FName(*IP), true, Options);
+    UGameplayStatics::OpenLevel(this, FName(*IP));
 }
  
 FString UMainMenuUIWidget::GetChosenPlayerName() const
 {
-    FString Raw = TXT_PlayerTAG ? TXT_PlayerTAG->GetText().ToString().TrimStartAndEnd() : FString();
- 
-   
-    FString Clean;
-    for (const TCHAR Char : Raw)
-    {
-        if (FChar::IsAlnum(Char) || Char == TEXT('-') || Char == TEXT('_'))
-        {
-            Clean.AppendChar(Char);
-        }
-        else if (Char == TEXT(' '))
-        {
-            Clean.AppendChar(TEXT('_'));
-        }
-    }
+    FString Name = TXT_PlayerTAG ? TXT_PlayerTAG->GetText().ToString().TrimStartAndEnd() : FString();
  
     
-    Clean = Clean.Left(15);
+    Name = Name.Left(15);
  
-    if (Clean.IsEmpty())
+    
+    if (Name.IsEmpty())
     {
-        Clean = TEXT("Jugador");
+        Name = TEXT("Jugador");
     }
  
-    return Clean;
+    return Name;
+}
+ 
+void UMainMenuUIWidget::SaveChosenName() const
+{
+    
+    if (UPEV2_GameInstance* GI = Cast<UPEV2_GameInstance>(GetGameInstance()))
+    {
+        GI->SetDesiredPlayerName(GetChosenPlayerName());
+    }
+    else if (GEngine)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 8.0f, FColor::Red,
+            TEXT("Falta configurar PEV2_GameInstance en Project Settings > Maps & Modes > Game Instance Class"));
+    }
 }
  
 void UMainMenuUIWidget::OnSettingsClicked()
@@ -107,7 +114,7 @@ void UMainMenuUIWidget::OnSettingsClicked()
  
 void UMainMenuUIWidget::OnQuitClicked()
 {
-   
+    
     APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
     UKismetSystemLibrary::QuitGame(this, PlayerController, EQuitPreference::Quit, true);
 }

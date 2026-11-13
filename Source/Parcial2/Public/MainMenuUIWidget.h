@@ -1,5 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
+ 
 #pragma once
  
 #include "CoreMinimal.h"
@@ -39,7 +39,7 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UEditableText* TXT_IP;
  
-
+	
 	UPROPERTY(meta = (BindWidget))
 	UEditableText* TXT_PlayerTAG;
     
@@ -48,6 +48,9 @@ protected:
  
 	
 	FString GetChosenPlayerName() const;
+ 
+	
+	void SaveChosenName() const;
  
 	
 	UFUNCTION()
